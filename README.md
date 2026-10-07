@@ -6,12 +6,12 @@
 
 A retention team selects customers for proactive support using a business rule, and it can only make a limited number of contacts. Should it replace the rule with an ML model?
 
-Using 7,043 telecom customer records, I compared ML and rule-based targeting under a fixed outreach budget, then designed a randomized experiment to test whether ML selects a better outreach list than a strong rule, with a holdout group to confirm that outreach itself works.
+Using 7,043 telecom customer records, I compared ML and rule-based targeting under a fixed outreach budget, then designed a randomized experiment to test whether ML selects a better outreach list than a strong rule, with a business-as-usual group to measure the incremental impact of each outreach policy.
 
 | 🎯 Who to target | ⚖️ ML vs. rules (offline) | 🧪 Experiment |
 |---|---|---|
-| **Month-to-month customers**: 54% of customers, but **88% of churners** | Logistic regression reaches **287 churners** with 423 contacts (68% precision vs. 43% random) | **Primary question:** does ML outreach retain more customers than rule outreach? |
-| Long-contract customers rarely churn in the test window, so they're excluded | A strong multi-factor rule reaches **270**: ML adds **+17 (+6%)**. A tenure-only rule reaches 230 | **Holdout check:** does outreach beat business-as-usual, so the comparison is meaningful? |
+| **Month-to-month customers**: 54% of customers, but **88% of churners** | Logistic regression identifies **287 churners** in a 423-customer shortlist (68% precision vs. 43% random) | **Primary question:** does ML outreach retain more customers than rule outreach? |
+| Focus on month-to-month customers for a near-term retention experiment | A strong multi-factor rule identifies **270**: ML adds **+17 (+6%)**. A tenure-only rule reaches 230 | **Supporting question:** does either outreach policy improve retention over business-as-usual? |
 
 *Status: Portfolio case study on the public IBM Telco Customer Churn dataset. Offline analysis complete; experiment proposed, not run.*
 
@@ -21,18 +21,13 @@ Using 7,043 telecom customer records, I compared ML and rule-based targeting und
 
 **Decision:** Should the retention team replace its rule-based targeting with an ML model?
 
-Customers saved by an outreach program depend on two things:
+The offline benchmark shows whether ML identifies more observed churners under the same contact budget. The experiment tests whether that screening advantage translates into more customers retained.
 
-> **customers saved = at-risk customers on the list × share that outreach saves**
-
-- **The list** is what ML could improve. Offline data can estimate it.
-- **The save rate** depends on the intervention. Only an experiment can measure it.
-
-So the experiment compares ML against the rule directly, and keeps a small no-outreach holdout. If outreach saves no one, ML and the rule will look identical, but only because neither works. The holdout separates "ML is no better" from "outreach doesn't work."
+**ML vs. Rule** answers the replacement decision. Comparisons with **business-as-usual** establish whether either outreach policy creates incremental value.
 
 ## 2 · Who Is Eligible: Month-to-Month Customers
 
-Customers on one- or two-year contracts face early-termination fees and rarely churn within an experiment window. Contacting them uses capacity without changing outcomes.
+The initial experiment focuses on month-to-month customers to align targeting with a near-term cancellation outcome. This group contains most observed churners in the test set.
 
 | Test set (2,113 customers) | Share of customers | Share of churners | Churn rate |
 |---|---:|---:|---:|
@@ -41,7 +36,7 @@ Customers on one- or two-year contracts face early-termination fees and rarely c
 
 **Eligibility:** month-to-month customers only. In practice, customers whose contracts end within the window would also qualify; the dataset has no contract dates, so they are not modeled here.
 
-**Capacity:** The outreach budget is fixed by support staffing at the equivalent of 20% of the full customer base, which is **423 contacts** in the test set. All contacts are drawn from month-to-month customers (about 37% of that pool).
+**Capacity:** For this case study, the assumed outreach budget is equivalent to 20% of the full customer base, which is **423 contacts** in the test set. All selected customers come from the month-to-month pool (about 37% of that pool). The 423-customer figure is the offline list size, not the experiment sample size.
 
 ## 3 · Offline Results: ML vs. Rules Within the Eligible Pool
 
@@ -52,9 +47,9 @@ The model is trained on all customers, then used to rank month-to-month customer
 
 <img width="700" height="450" alt="different_reachout_capacity" src="https://github.com/user-attachments/assets/e8134788-dd31-44e5-977f-b3a624e52764" />
 
-Churners reached (precision in parentheses), all contacts drawn from month-to-month customers:
+Observed churners identified (precision in parentheses), with all customers selected from the month-to-month pool:
 
-| Contacts (% of full base) | Logistic regression | Boosting (GBM) | Multi-factor rule | Tenure rule |
+| Customers selected (% of full base) | Logistic regression | Boosting (GBM) | Multi-factor rule | Tenure rule |
 |---|---:|---:|---:|---:|
 | 106 (5%) | 85 (80%) | 93 (88%) | 76 (72%) | 64 (60%) |
 | 212 (10%) | 158 (75%) | 162 (76%) | 151 (71%) | 129 (61%) |
@@ -65,9 +60,9 @@ Churners reached (precision in parentheses), all contacts drawn from month-to-mo
 
 ### What the results show
 
-- **Logistic regression over boosting.** Both reach 287 churners at 423 contacts. Boosting only pulls ahead at very small lists, so the simpler, more interpretable model is the better choice at this operating point.
-- **A good rule gets most of the way.** The multi-factor rule reaches 94% of ML's churners. The two lists overlap by 77%. Where they differ, ML's picks are more often true churners: **61% (59 of 96) vs. 44% (42 of 96)**.
-- **ML's edge is real but small:** +17 churners per 423 contacts (+6%) over the strong rule, and +57 over the tenure-only rule. A tenure-only benchmark would overstate ML's value. The strong rule is the right comparison for the experiment.
+- **Logistic regression over boosting.** Both identify 287 churners at 423 selected customers. Boosting shows its largest advantage at smaller lists, so I recommend the simpler, more interpretable LR model at this operating point.
+- **A good rule gets most of the way.** The multi-factor rule identifies 94% as many churners as ML. The two lists overlap by 77%. Where they differ, ML's picks are more often true churners: **61% (59 of 96) vs. 44% (42 of 96)**.
+- **ML identifies 17 additional churners in the test sample:** +6% at the 423-customer list size over the strong rule, and +57 over the tenure-only rule. A tenure-only benchmark would overstate ML's value. The strong rule is the right comparison for the experiment.
 - **Early tenure matters most.** It is the strongest single signal, which points to onboarding and service friction as the place to intervene.
 
 <details>
@@ -93,13 +88,13 @@ Stratified 10-fold cross-validation and a held-out 30% test set. Test ROC-AUC: 0
 
 **Customer experience:** Selected customers receive a short call or message asking whether their service is working as expected. Reported issues are routed to support.
 
-**Why support, not discounts:** Discounts subsidize customers who would have stayed anyway, and they mix price effects into the test. Both outreach arms get the identical support protocol, so the only difference between them is *who* is contacted.
+**Why support first:** Test whether resolving service friction improves retention without introducing a pricing change. Both outreach arms use the same support protocol, so the policy difference is *who* is selected. Discounts can be explored separately.
 
 ## 5 · Experiment Design
 
 ### Arms
 
-Randomly assign eligible month-to-month customers to three arms. Each outreach arm contacts the same share of its arm (about 37%).
+Randomly assign eligible month-to-month customers to three arms. Each outreach arm selects the same share of its assigned population (about 37%) and uses the same contact-attempt limits, channels, and support scope.
 
 | Arm | Allocation (example) | Who gets a check-in |
 |---|---:|---|
@@ -107,16 +102,16 @@ Randomly assign eligible month-to-month customers to three arms. Each outreach a
 | **Rule outreach** | 45% | Highest multi-factor rule scores |
 | **Holdout (business-as-usual)** | 10% | No additional outreach |
 
-The holdout can be small because outreach vs. no outreach is a large difference. Most of the sample goes to the ML and rule arms, where the difference to detect is small.
+**Proposed allocation: 45% ML / 45% Rule / 10% business-as-usual.** Prioritize sample for the main policy comparison; finalize allocation through power analysis for both the primary and supporting comparisons. Freeze eligibility, model, rule, tie-breaking, and delivery procedures before launch.
 
 ### Metrics, by role
 
 | Role | Metric | What it answers |
 |---|---|---|
 | **Primary** | Churn rate in ML arm − churn rate in rule arm | **Does ML select a better list?** This is the decision metric |
-| **Precondition check** | Churn in each outreach arm vs. holdout | Does outreach work? If not, the primary comparison can't be interpreted |
+| **Incremental impact** | Churn in each outreach arm vs. holdout | Does either outreach policy improve retention over existing operations? |
 | **Business** | Net value difference: retained contribution − support and model costs, per assigned customer | Is "better" worth the cost of running a model? |
-| **Confirmation** | 90-day retention, same comparisons | Did outreach prevent churn, or only delay it a billing cycle? |
+| **Confirmation** | 90-day retention, same comparisons | Does the retention benefit persist beyond the primary window? |
 | **Guardrails** | Complaints, marketing opt-outs, support workload | Does either policy cause harm? |
 | **Diagnostics** | Contact rate, support uptake, issue resolution | Why did the results come out this way? |
 
@@ -124,31 +119,22 @@ The holdout can be small because outreach vs. no outreach is a large difference.
 
 **Whole-arm comparison (intention-to-treat):** Every assigned customer counts, contacted or not. ML and the rule select different people, so comparing only contacted customers would mix selection with effect. Comparing whole randomized arms isolates the policy.
 
-### Sizing the primary comparison
+### Sample Size and Timing
 
-**Expected effect:** the difference between arms is roughly
+Power the primary ML–Rule comparison using the historical 60-day cancellation rate and the smallest whole-arm improvement that would justify the model's additional cost. Use **two-sided α = 0.05** and **80% power**, and verify that the holdout is sufficiently sized for the supporting comparisons. Predefine the testing approach across comparisons.
 
-> share contacted × precision gap × save rate ≈ 37% × 4 points × save rate
-
-That is about **1/17 of the outreach-vs.-holdout effect**, so the ML–rule test needs far more customers (roughly 300×) than testing whether outreach works. It is a realistic test for a large operator, and cheaper with low-cost digital outreach.
-
-**Minimum detectable effect (MDE):** set from the business case. It is the smallest ML–rule retention gap that would cover the cost of running and maintaining the model. Size the test at two-sided α = 0.05 and 80% power for that gap.
-
-**Break-even illustration:** Per 10,000 contacts, ML reaches about **400 more at-risk customers** than the rule (17 per 423). Its extra value is:
-
-> 400 × save rate × value per saved customer − model cost
-
-For an operator making 100,000 contacts a month, with $200 per saved customer and $15k a month to run the model, ML breaks even if outreach saves about **2%** of the at-risk customers it reaches. If available traffic can't detect a gap that small, the save rate measured in the holdout comparison can feed this calculation as a fallback.
+Set enrollment duration from the required sample size and eligible traffic. Complete every customer's 60-day observation window before the primary readout, followed by the 90-day assessment.
 
 ### Rollout decision
 
-| Outcome | Decision |
+| Evidence | Decision |
 |---|---|
-| Outreach doesn't beat the holdout | **Rethink the intervention.** ML vs. rule can't be judged when neither list is acted on effectively |
-| Outreach works; ML beats the rule; net value positive; guardrails pass | **Adopt ML targeting** |
-| Outreach works; ML–rule gap is precisely estimated below the MDE | **Keep the rule.** The model doesn't pay for itself |
-| Outreach works; ML–rule result inconclusive | **Extend the test** or decide with the break-even check using the measured save rate |
-| Lift fades by 90 days | **Treat it as delay, not retention**; redesign before scaling |
+| ML improves retention over Rule and business-as-usual; additional value covers model costs; guardrails pass | **Adopt ML targeting** |
+| Rule improves retention over business-as-usual; the estimated ML advantage is too small to justify its cost | **Keep the rule** |
+| Both policies fall short of the required business benefit, with sufficiently precise estimates | **Revise the intervention or delivery** |
+| Evidence remains inconclusive | **Keep the current approach and plan additional evidence collection** |
+
+Use 90-day retention and contribution to assess the duration of the benefit and update the rollout value calculation.
 
 ## 6 · Limits and Next Steps
 
@@ -161,7 +147,6 @@ For an operator making 100,000 contacts a month, with $200 per saved customer an
 
 ## Explore the Work
 
-<!-- TODO: update links after renaming repositories -->
 [**Python workflow →**](https://github.com/ysun-data/Churn-Analysis-new/blob/main/churn_analysis.py) · [**Data & repository →**](https://github.com/ysun-data/Churn-Analysis-new) · [**Original R analysis →**](https://github.com/ysun-data/Telecom-Churn-Analysis)
 
 ```bash
